@@ -14,14 +14,26 @@ export default class HelloWorldScene extends Phaser.Scene {
     //crear la pelota
     this.ball = this.add.circle(310, 300, 10, 0xff6666);
 
-    //agregar obstaculo
-    this.obstacle = this.add.rectangle(400, 250, 100, 50, 0x66ff66);
+
+    //crear contenedor de obstaculos
+    this.obstacleContainer = this.add.container();
+    //generar mas obstaculos
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 7; col++) {
+        let x = 120 + col * 80;
+        let y = 100 + row * 40;
+        let obstacle = this.add.rectangle(x, y, 60, 20, 0x66ff66);
+        this.physics.add.existing(obstacle);
+        obstacle.body.setImmovable(true);
+        this.obstacleContainer.add(obstacle);
+        obstacle.body.setAllowGravity(false); // Desactiva la gravedad para los obstáculos
+      }
+    }
 
     //agregar fisicas a los objetos
     this.physics.add.existing(this.paddle);
     this.physics.add.existing(this.ball);
-    this.physics.add.existing(this.obstacle);
-
+    
     //FISICAS DE LA PALETA
     //hacer la paleta inamovible
     this.paddle.body.setImmovable(true);
@@ -37,37 +49,26 @@ export default class HelloWorldScene extends Phaser.Scene {
     //FISICAS DE LA PELOTA
     //colision con los limites
     this.ball.body.setCollideWorldBounds(true);
+    this.ball.body.onWorldBounds = true; 
     //rebote de la pelota
     this.ball.body.setBounce(1, 1);
     //velocidad de la pelota
-    this.ball.body.setVelocity(200, 200);
-
-    //FISICAS DE LOS OBSTACULOS
-    //hacer al obstaculo inamovible
-    this.obstacle.body.setImmovable(true);
-    //hacer que el obstaculo no se vea afectado por la gravedad
-    this.obstacle.body.setAllowGravity(false);
+    this.ball.body.setVelocity(200, 270);
 
     //COLISIONES
     //colision de la pelota con la paleta
     this.physics.add.collider(this.paddle, this.ball, null, null, this);
 
     //colision de la pelota con el obstaculo
-    this.ball.body.onWorldBounds = true;
-    this.physics.add.collider(
-      this.obstacle,
-      this.ball,
-      this.handleCollision,
-      null,
-      this
-    );
-     //colision de la pelota con el limite inferior
-     this.physics.world.on("worldbounds", (body, up, down, left, right) => {
-      if (down) {
-        console.log("hit bottom");
-        this.scene.start("GameOver");
-      }
-    });
+    this.physics.add.collider(this.obstacleContainer.list, this.ball, this.handleCollision, null, this);
+   // Colisión de la pelota con el límite inferior
+   this.physics.world.on("worldbounds", (body, up, down, left, right) => {
+    if (down && body.gameObject === this.ball) {
+      console.log("hit bottom");
+      this.GameOver();
+    }
+  });
+
   }
 
   update(){
@@ -78,5 +79,8 @@ export default class HelloWorldScene extends Phaser.Scene {
     console.log("collision");
     obstacle.destroy();
   };
+  GameOver() {
+    this.scene.start('GameOver');
+  }
 }
 
